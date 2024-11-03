@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import formidable, { Fields, Files } from 'formidable';
+import formidable, { Fields, Files, File } from 'formidable';
 import fetch from 'node-fetch';
 import OSS from 'ali-oss';
 import FormData from 'form-data';
@@ -18,7 +18,12 @@ export const config = {
   },
 };
 
-async function uploadToGtimg(file: any) {
+interface FormidableFile extends File {
+  type: string;
+  size: number;
+}
+
+async function uploadToGtimg(file: FormidableFile) {
   try {
     const formData = new FormData();
     formData.append('Filedata', file.data, {
@@ -60,7 +65,7 @@ async function uploadToGtimg(file: any) {
   }
 }
 
-async function uploadToOSS(file: any, remoteUrl: string) {
+async function uploadToOSS(file: FormidableFile, remoteUrl: string) {
   try {
     const matches = remoteUrl.match(/\/([^\/]+)\/0$/);
     if (!matches) {
@@ -93,7 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     });
 
-    const file = files.Filedata;
+    const file = files.Filedata as FormidableFile;
     if (!file) {
       return res.status(400).json({ error: '没有接收到文件' });
     }
