@@ -82,9 +82,10 @@ async function uploadToGtimg(file: FormidableFile) {
     
     const headers = {
       ...formData.getHeaders(),
-      'Accept': '*/*',
+      'Accept': 'application/json',
       'Accept-Language': 'zh-CN,zh;q=0.9',
       'Connection': 'keep-alive',
+      'Origin': 'https://om.qq.com',
       'Referer': 'https://om.qq.com/userReg/mediaInfo',
       'CLIENT-IP': ip,
       'X-FORWARDED-FOR': ip,
@@ -100,8 +101,17 @@ async function uploadToGtimg(file: FormidableFile) {
         method: 'POST',
         body: formData,
         headers,
+        redirect: 'follow',
       });
       console.log('请求已发送, 状态码:', response.status);
+      
+      // 检查内容类型
+      const contentType = response.headers.get('content-type');
+      console.log('响应内容类型:', contentType);
+      
+      if (!contentType?.includes('application/json')) {
+        throw new Error(`意外的响应类型: ${contentType}`);
+      }
     } catch (err) {
       console.error('请求发送失败:', err);
       throw new Error(`请求发送失败: ${err.message}`);
@@ -110,15 +120,15 @@ async function uploadToGtimg(file: FormidableFile) {
     let responseText;
     try {
       responseText = await response.text();
-      console.log('收到响应:', responseText);
+      console.log('收到响应:', responseText.substring(0, 200) + '...');  // 只打印前200个字符
     } catch (err) {
       console.error('响应读取失败:', err);
       throw new Error(`响应读取失败: ${err.message}`);
     }
 
     if (!response.ok) {
-      console.error('HTTP错误:', response.status, responseText);
-      throw new Error(`HTTP error! status: ${response.status}, response: ${responseText}`);
+      console.error('HTTP错误:', response.status, responseText.substring(0, 200));
+      throw new Error(`HTTP error! status: ${response.status}, response: ${responseText.substring(0, 200)}`);
     }
 
     let parsedResponse;
@@ -127,8 +137,8 @@ async function uploadToGtimg(file: FormidableFile) {
       console.log('响应解析成功:', JSON.stringify(parsedResponse, null, 2));
       return parsedResponse;
     } catch (err) {
-      console.error('JSON解析失败:', err, '原始响应:', responseText);
-      throw new Error(`响应格式错误: ${responseText}`);
+      console.error('JSON解析失败:', err, '原始响应前200个字符:', responseText.substring(0, 200));
+      throw new Error('服务器返回了非JSON响应，可能需要更新Cookie');
     }
   } catch (error) {
     console.error('上传到腾讯图床失败:', error);
