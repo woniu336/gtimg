@@ -1,9 +1,0 @@
-{
-  "version": 2,
-  "functions": {
-    "pages/api/**/*.ts": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  }
-} 

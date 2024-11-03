@@ -163,7 +163,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>腾讯Gtimg图床上传</h2>
+        <h2>Gtimg图床</h2>
         <div id="uploadArea">
             点击或拖拽图片到此处上传
             <input type="file" id="fileInput" accept="image/*" multiple>
@@ -323,21 +323,12 @@
                     const formData = new FormData();
                     formData.append('Filedata', file);
 
-                    const uploadResponse = await fetch('./api/upload', {
+                    const uploadResponse = await fetch('upload.php', {
                         method: 'POST',
-                        body: formData,
-                        headers: {
-                            'Accept': 'application/json'
-                        }
+                        body: formData
                     });
 
-                    const contentType = uploadResponse.headers.get('content-type');
-                    if (!contentType || !contentType.includes('application/json')) {
-                        throw new Error('服务器返回了非JSON响应');
-                    }
-
                     const data = await uploadResponse.json();
-                    console.log('上传响应:', data);
 
                     if (data.response && data.response.code === '0') {
                         const imageUrl = data.data.url.url;
@@ -364,20 +355,18 @@
                         };
 
                         resultItem.uploadStatus.style.display = 'none';
+                        await saveToLocalStorage({url: imageUrl});
                     } else {
-                        console.error('上传失败:', data);
-                        resultItem.uploadStatus.textContent = `上传失败: ${data.message || '未知错误'}`;
-                        if (data.debug) {
-                            console.error('调试信息:', data.debug);
-                        }
+                        throw new Error(data.message || '上传失败');
                     }
 
                     const progress = ((i + 1) / totalFiles) * 100;
                     progressBar.style.width = `${progress}%`;
                     progressText.textContent = `已上传 ${i + 1}/${totalFiles} 张图片`;
                 } catch (error) {
-                    console.error('上传出错:', error);
-                    resultItem.uploadStatus.textContent = `上传错误: ${error.message || '未知错误'}`;
+                    console.error('上传错误:', error);
+                    resultItem.uploadStatus.textContent = '上传失败';
+                    resultItem.uploadStatus.style.color = 'red';
                 }
             }
 
@@ -385,7 +374,7 @@
                 copyAllLinksBtn.style.display = 'inline-block';
             }
 
-            uploadStatus.textContent = uploadedUrls.length > 0 ? '上传完成' : '上传失败';
+            uploadStatus.textContent = '上传完成';
             uploadBtn.disabled = false;
             selectedFiles = [];
             fileInput.value = '';

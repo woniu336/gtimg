@@ -5,7 +5,7 @@ class Gtimg
 {
     public $name = '腾讯Gtimg图床';
     public $ver = '1.0';
-    private $token = 'RK=dbG4Td3Xa2; ptcz=72b0dbc93b96ae9906a9387e76622ef5bd24f608422f3b9b60724e580eecd9a2; qq_domain_video_guid_verify=284165be9d455435; _qimei_uuid42=18715103119100bdf8de8c9de384c328535cdbe84e; _qimei_q36=; _qimei_h38=fdedd3b7f8de8c9de384c32802000004418715; pgv_pvid=5653403555; pac_uid=0_iMZ4mHBzSYKcN; tvfe_boss_uuid=ed7ef3676415810e; suid=user_0_iMZ4mHBzSYKcN; _qimei_fingerprint=800567cbaf10304a4dcb7976791c785c; ptui_loginuin=310478073; vversion_name=8.2.95; video_omgid=284165be9d455435; pgv_info=ssid=s9378087528; ts_refer=blog.taoshuge.eu.org/; ts_uid=8075872365; csrfToken=csrf-1730500685526; _qpsvr_localtk=0.9616016162303438; ts_last=om.qq.com/userReg/register; wxky=1; userid=22510990;omaccesstoken=00bf9d8117884e99c73ec21e1e5f7a28cad91d504ecc6b7e6bfa280dc6fc4314cd12486a5654a37770df5a1f19a4453ca2b1526cb771d114bfeb7e89d022c7d519ih;omaccesstoken_expire=1730759934;omtoken=00bf9d8117884e99c73ec21e1e5f7a28cad91d504ecc6b7e6bfa280dc6fc4314cd12486a5654a37770df5a1f19a4453ca2b1526cb771d114bfeb7e89d022c7d519ih; TSID=i2jl26cpgq9cpds1r2ltnmfgk6';
+    private $token = '';
 
     public function submit($file_path)
     {
