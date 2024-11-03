@@ -73,7 +73,6 @@ async function uploadToGtimg(file: FormidableFile) {
       from: 'user'
     };
 
-    console.log('准备添加表单字段:', fields);
     Object.entries(fields).forEach(([key, value]) => {
       formData.append(key, value);
     });
@@ -82,18 +81,22 @@ async function uploadToGtimg(file: FormidableFile) {
     
     const headers = {
       ...formData.getHeaders(),
-      'Accept': 'application/json',
-      'Accept-Language': 'zh-CN,zh;q=0.9',
+      'Accept': 'application/json, text/plain, */*',
+      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
       'Connection': 'keep-alive',
       'Origin': 'https://om.qq.com',
       'Referer': 'https://om.qq.com/userReg/mediaInfo',
+      'Sec-Fetch-Dest': 'empty',
+      'Sec-Fetch-Mode': 'cors',
+      'Sec-Fetch-Site': 'same-origin',
       'CLIENT-IP': ip,
       'X-FORWARDED-FOR': ip,
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36',
+      'X-Requested-With': 'XMLHttpRequest',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       'Cookie': process.env.GTIMG_TOKEN || '',
     };
 
-    console.log('准备发送请求, headers:', JSON.stringify(headers, null, 2));
+    console.log('准备发送请求...');
 
     let response;
     try {
@@ -101,44 +104,41 @@ async function uploadToGtimg(file: FormidableFile) {
         method: 'POST',
         body: formData,
         headers,
-        redirect: 'follow',
+        redirect: 'manual',
       });
+
       console.log('请求已发送, 状态码:', response.status);
-      
+      console.log('响应头:', response.headers);
+
+      // 如果是重定向
+      if (response.status === 302 || response.status === 301) {
+        throw new Error('登录已过期，需要更新Cookie');
+      }
+
       // 检查内容类型
       const contentType = response.headers.get('content-type');
       console.log('响应内容类型:', contentType);
-      
-      if (!contentType?.includes('application/json')) {
-        throw new Error(`意外的响应类型: ${contentType}`);
+
+      const responseText = await response.text();
+      console.log('原始响应:', responseText.substring(0, 500));
+
+      // 如果响应包含HTML标签，可能是登录页面
+      if (responseText.includes('<!DOCTYPE html>') || responseText.includes('<html')) {
+        throw new Error('收到HTML响应，可能需要更新Cookie');
       }
-    } catch (err) {
-      console.error('请求发送失败:', err);
-      throw new Error(`请求发送失败: ${err.message}`);
-    }
 
-    let responseText;
-    try {
-      responseText = await response.text();
-      console.log('收到响应:', responseText.substring(0, 200) + '...');  // 只打印前200个字符
-    } catch (err) {
-      console.error('响应读取失败:', err);
-      throw new Error(`响应读取失败: ${err.message}`);
-    }
+      try {
+        const data = JSON.parse(responseText);
+        console.log('解析后的响应:', data);
+        return data;
+      } catch (err) {
+        console.error('JSON解析失败:', err);
+        throw new Error(`无效的JSON响应: ${responseText.substring(0, 100)}...`);
+      }
 
-    if (!response.ok) {
-      console.error('HTTP错误:', response.status, responseText.substring(0, 200));
-      throw new Error(`HTTP error! status: ${response.status}, response: ${responseText.substring(0, 200)}`);
-    }
-
-    let parsedResponse;
-    try {
-      parsedResponse = JSON.parse(responseText);
-      console.log('响应解析成功:', JSON.stringify(parsedResponse, null, 2));
-      return parsedResponse;
     } catch (err) {
-      console.error('JSON解析失败:', err, '原始响应前200个字符:', responseText.substring(0, 200));
-      throw new Error('服务器返回了非JSON响应，可能需要更新Cookie');
+      console.error('请求或解析失败:', err);
+      throw new Error(`请求失败: ${err.message}`);
     }
   } catch (error) {
     console.error('上传到腾讯图床失败:', error);
