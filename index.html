@@ -323,10 +323,18 @@
                     const formData = new FormData();
                     formData.append('Filedata', file);
 
-                    const uploadResponse = await fetch('/api/upload', {
+                    const uploadResponse = await fetch('./api/upload', {
                         method: 'POST',
-                        body: formData
+                        body: formData,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
                     });
+
+                    const contentType = uploadResponse.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        throw new Error('服务器返回了非JSON响应');
+                    }
 
                     const data = await uploadResponse.json();
                     console.log('上传响应:', data);
@@ -356,7 +364,6 @@
                         };
 
                         resultItem.uploadStatus.style.display = 'none';
-                        await saveToLocalStorage({url: imageUrl});
                     } else {
                         console.error('上传失败:', data);
                         resultItem.uploadStatus.textContent = `上传失败: ${data.message || '未知错误'}`;
@@ -378,7 +385,7 @@
                 copyAllLinksBtn.style.display = 'inline-block';
             }
 
-            uploadStatus.textContent = '上传完成';
+            uploadStatus.textContent = uploadedUrls.length > 0 ? '上传完成' : '上传失败';
             uploadBtn.disabled = false;
             selectedFiles = [];
             fileInput.value = '';
