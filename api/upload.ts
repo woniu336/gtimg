@@ -1,5 +1,6 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
-import formidable, { Fields, Files } from 'formidable';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import formidable from 'formidable';
+import type { Fields, Files } from 'formidable';
 import fetch from 'node-fetch';
 import OSS from 'ali-oss';
 import FormData from 'form-data';
