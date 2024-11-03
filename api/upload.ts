@@ -3,7 +3,8 @@ import formidable, { Fields, Files } from 'formidable';
 import fetch from 'node-fetch';
 import OSS from 'ali-oss';
 import FormData from 'form-data';
-import { createReadStream, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
+import { Readable } from 'stream';
 
 // 配置阿里云OSS客户端
 const ossClient = new OSS({
@@ -20,38 +21,47 @@ export const config = {
 };
 
 interface FormidableFile {
-  type: string;
-  size: number;
-  name: string;
   filepath: string;
   originalFilename: string;
   mimetype: string;
-  hashAlgorithm: false | "sha1" | "md5" | "sha256";
-  hash?: string;
-  lastModifiedDate?: Date;
-  toJSON(): Object;
+  size: number;
+}
+
+async function streamToBuffer(stream: Readable): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+    stream.on('error', (err) => reject(err));
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+  });
 }
 
 async function uploadToGtimg(file: FormidableFile) {
   try {
-    // 读取文件内容
     const fileBuffer = readFileSync(file.filepath);
     const formData = new FormData();
     
-    // 使用 buffer 而不是 stream
     formData.append('Filedata', fileBuffer, {
       filename: file.originalFilename || 'image.jpg',
       contentType: file.mimetype,
     });
 
-    formData.append('subModule', 'userAuth_individual_head');
-    formData.append('id', 'WU_FILE_0');
-    formData.append('name', file.originalFilename || 'image.jpg');
-    formData.append('type', file.mimetype);
-    formData.append('lastModifiedDate', new Date().toUTCString());
-    formData.append('appkey', '1');
-    formData.append('isRetImgAttr', '1');
-    formData.append('from', 'user');
+    // 添加必要的表单字段
+    const fields = {
+      subModule: 'userAuth_individual_head',
+      id: 'WU_FILE_0',
+      name: file.originalFilename || 'image.jpg',
+      type: file.mimetype,
+      lastModifiedDate: new Date().toUTCString(),
+      appkey: '1',
+      isRetImgAttr: '1',
+      from: 'user'
+    };
+
+    // 添加所有字段到formData
+    Object.entries(fields).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
 
     const ip = `${Math.floor(Math.random() * 92 + 48)}.${Math.floor(Math.random() * 230 + 10)}.${Math.floor(Math.random() * 230 + 10)}.${Math.floor(Math.random() * 230 + 10)}`;
 
@@ -60,6 +70,7 @@ async function uploadToGtimg(file: FormidableFile) {
       method: 'POST',
       body: formData,
       headers: {
+        ...formData.getHeaders(),
         'Accept': '*/*',
         'Accept-Language': 'zh-CN,zh;q=0.9',
         'Connection': 'keep-alive',
@@ -71,19 +82,18 @@ async function uploadToGtimg(file: FormidableFile) {
       },
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
     const responseText = await response.text();
     console.log('腾讯图床响应:', responseText);
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}, response: ${responseText}`);
+    }
+
     try {
-      const data = JSON.parse(responseText);
-      return data;
+      return JSON.parse(responseText);
     } catch (e) {
       console.error('JSON解析失败:', e);
-      throw new Error('响应格式错误');
+      throw new Error(`响应格式错误: ${responseText}`);
     }
   } catch (error) {
     console.error('上传到腾讯图床失败:', error);
@@ -159,7 +169,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('腾讯图床返回结果:', gtimgResult);
 
     if (!gtimgResult?.data?.url?.url) {
-      return res.status(500).json({ error: '上传到腾讯图床失败' });
+      return res.status(500).json({ 
+        response: { code: '1' },
+        message: '上传到腾讯图床失败',
+        debug: gtimgResult 
+      });
     }
 
     const gtimgUrl = gtimgResult.data.url.url;
@@ -188,7 +202,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('上传处理失败:', error);
     return res.status(500).json({
       response: { code: '1' },
-      message: error instanceof Error ? error.message : '上传失败'
+      message: error instanceof Error ? error.message : '上传失败',
+      debug: error
     });
   }
 } 
