@@ -18,15 +18,26 @@ export const config = {
   },
 };
 
+// 扩展 FormidableFile 接口定义
 interface FormidableFile extends File {
   type: string;
   size: number;
+  name: string;
+  data: Buffer;
+  filepath: string;
+  originalFilename: string;
+  mimetype: string;
+  hashAlgorithm: boolean | string;
+  hash?: string;
+  toJSON(): Object;
 }
 
 async function uploadToGtimg(file: FormidableFile) {
   try {
     const formData = new FormData();
-    formData.append('Filedata', file.data, {
+    // 使用 filepath 而不是 data
+    const fileStream = require('fs').createReadStream(file.filepath);
+    formData.append('Filedata', fileStream, {
       filename: file.name,
       contentType: file.type,
     });
@@ -76,7 +87,9 @@ async function uploadToOSS(file: FormidableFile, remoteUrl: string) {
     const extension = file.name.split('.').pop();
     const ossPath = `uploads/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(new Date().getDate()).padStart(2, '0')}/${newFileName}.${extension}`;
 
-    const result = await ossClient.put(ossPath, file.data);
+    // 使用 filepath 而不是 data
+    const fileStream = require('fs').createReadStream(file.filepath);
+    const result = await ossClient.put(ossPath, fileStream);
     return result.url;
   } catch (error) {
     console.error('上传到OSS失败:', error);
