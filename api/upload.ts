@@ -38,13 +38,28 @@ async function streamToBuffer(stream: Readable): Promise<Buffer> {
 
 async function uploadToGtimg(file: FormidableFile) {
   try {
-    const fileBuffer = readFileSync(file.filepath);
+    console.log('开始读取文件:', file.filepath);
+    let fileBuffer;
+    try {
+      fileBuffer = readFileSync(file.filepath);
+      console.log('文件读取成功, 大小:', fileBuffer.length);
+    } catch (err) {
+      console.error('文件读取失败:', err);
+      throw new Error(`文件读取失败: ${err.message}`);
+    }
+
     const formData = new FormData();
     
-    formData.append('Filedata', fileBuffer, {
-      filename: file.originalFilename || 'image.jpg',
-      contentType: file.mimetype,
-    });
+    try {
+      formData.append('Filedata', fileBuffer, {
+        filename: file.originalFilename || 'image.jpg',
+        contentType: file.mimetype,
+      });
+      console.log('文件已添加到FormData');
+    } catch (err) {
+      console.error('FormData添加文件失败:', err);
+      throw new Error(`FormData添加文件失败: ${err.message}`);
+    }
 
     // 添加必要的表单字段
     const fields = {
@@ -58,41 +73,61 @@ async function uploadToGtimg(file: FormidableFile) {
       from: 'user'
     };
 
-    // 添加所有字段到formData
+    console.log('准备添加表单字段:', fields);
     Object.entries(fields).forEach(([key, value]) => {
       formData.append(key, value);
     });
 
     const ip = `${Math.floor(Math.random() * 92 + 48)}.${Math.floor(Math.random() * 230 + 10)}.${Math.floor(Math.random() * 230 + 10)}.${Math.floor(Math.random() * 230 + 10)}`;
+    
+    const headers = {
+      ...formData.getHeaders(),
+      'Accept': '*/*',
+      'Accept-Language': 'zh-CN,zh;q=0.9',
+      'Connection': 'keep-alive',
+      'Referer': 'https://om.qq.com/userReg/mediaInfo',
+      'CLIENT-IP': ip,
+      'X-FORWARDED-FOR': ip,
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36',
+      'Cookie': process.env.GTIMG_TOKEN || '',
+    };
 
-    console.log('正在发送请求到腾讯图床...');
-    const response = await fetch('https://om.qq.com/image/orginalupload', {
-      method: 'POST',
-      body: formData,
-      headers: {
-        ...formData.getHeaders(),
-        'Accept': '*/*',
-        'Accept-Language': 'zh-CN,zh;q=0.9',
-        'Connection': 'keep-alive',
-        'Referer': 'https://om.qq.com/userReg/mediaInfo',
-        'CLIENT-IP': ip,
-        'X-FORWARDED-FOR': ip,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36',
-        'Cookie': process.env.GTIMG_TOKEN || '',
-      },
-    });
+    console.log('准备发送请求, headers:', JSON.stringify(headers, null, 2));
 
-    const responseText = await response.text();
-    console.log('腾讯图床响应:', responseText);
+    let response;
+    try {
+      response = await fetch('https://om.qq.com/image/orginalupload', {
+        method: 'POST',
+        body: formData,
+        headers,
+      });
+      console.log('请求已发送, 状态码:', response.status);
+    } catch (err) {
+      console.error('请求发送失败:', err);
+      throw new Error(`请求发送失败: ${err.message}`);
+    }
+
+    let responseText;
+    try {
+      responseText = await response.text();
+      console.log('收到响应:', responseText);
+    } catch (err) {
+      console.error('响应读取失败:', err);
+      throw new Error(`响应读取失败: ${err.message}`);
+    }
 
     if (!response.ok) {
+      console.error('HTTP错误:', response.status, responseText);
       throw new Error(`HTTP error! status: ${response.status}, response: ${responseText}`);
     }
 
+    let parsedResponse;
     try {
-      return JSON.parse(responseText);
-    } catch (e) {
-      console.error('JSON解析失败:', e);
+      parsedResponse = JSON.parse(responseText);
+      console.log('响应解析成功:', JSON.stringify(parsedResponse, null, 2));
+      return parsedResponse;
+    } catch (err) {
+      console.error('JSON解析失败:', err, '原始响应:', responseText);
       throw new Error(`响应格式错误: ${responseText}`);
     }
   } catch (error) {
@@ -122,26 +157,40 @@ async function uploadToOSS(file: FormidableFile, remoteUrl: string) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  console.log('收到上传请求');
+  
   if (req.method !== 'POST') {
+    console.log('非POST请求被拒绝');
     return res.status(405).json({ error: '方法不允许' });
   }
 
   try {
     const form = formidable({
       keepExtensions: true,
-      maxFileSize: 10 * 1024 * 1024, // 10MB
+      maxFileSize: 10 * 1024 * 1024,
     });
 
     console.log('开始解析上传文件...');
-    const [fields, files] = await new Promise<[Fields, Files]>((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
-        if (err) reject(err);
-        resolve([fields, files]);
+    let fields, files;
+    try {
+      [fields, files] = await new Promise<[Fields, Files]>((resolve, reject) => {
+        form.parse(req, (err, fields, files) => {
+          if (err) {
+            console.error('文件解析失败:', err);
+            reject(err);
+          }
+          resolve([fields, files]);
+        });
       });
-    });
+      console.log('文件解析成功');
+    } catch (err) {
+      console.error('文件解析出错:', err);
+      throw new Error(`文件解析失败: ${err.message}`);
+    }
 
     const fileData = files.Filedata;
     if (!fileData || Array.isArray(fileData)) {
+      console.error('没有接收到文件或文件格式错误');
       return res.status(400).json({ error: '没有接收到文件' });
     }
 
@@ -149,7 +198,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('文件信息:', {
       name: file.originalFilename,
       type: file.mimetype,
-      size: file.size
+      size: file.size,
+      path: file.filepath
     });
 
     // 文件类型验证
@@ -203,7 +253,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({
       response: { code: '1' },
       message: error instanceof Error ? error.message : '上传失败',
-      debug: error
+      debug: {
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+        } : error,
+        env: {
+          hasGtimgToken: !!process.env.GTIMG_TOKEN,
+          tokenLength: process.env.GTIMG_TOKEN?.length || 0,
+        }
+      }
     });
   }
 } 

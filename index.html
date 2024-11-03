@@ -329,6 +329,7 @@
                     });
 
                     const data = await uploadResponse.json();
+                    console.log('上传响应:', data);
 
                     if (data.response && data.response.code === '0') {
                         const imageUrl = data.data.url.url;
@@ -357,16 +358,19 @@
                         resultItem.uploadStatus.style.display = 'none';
                         await saveToLocalStorage({url: imageUrl});
                     } else {
-                        throw new Error(data.message || '上传失败');
+                        console.error('上传失败:', data);
+                        resultItem.uploadStatus.textContent = `上传失败: ${data.message || '未知错误'}`;
+                        if (data.debug) {
+                            console.error('调试信息:', data.debug);
+                        }
                     }
 
                     const progress = ((i + 1) / totalFiles) * 100;
                     progressBar.style.width = `${progress}%`;
                     progressText.textContent = `已上传 ${i + 1}/${totalFiles} 张图片`;
                 } catch (error) {
-                    console.error('上传错误:', error);
-                    resultItem.uploadStatus.textContent = '上传失败';
-                    resultItem.uploadStatus.style.color = 'red';
+                    console.error('上传出错:', error);
+                    resultItem.uploadStatus.textContent = `上传错误: ${error.message || '未知错误'}`;
                 }
             }
 
