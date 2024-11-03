@@ -49,7 +49,7 @@
 
 
 
-最好把**cookie** 填入upload.php的
+最后把**cookie** 填入upload.php的
 
 ```
 private $token = ''
