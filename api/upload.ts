@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import formidable from 'formidable';
+import formidable, { Fields, Files } from 'formidable';
 import fetch from 'node-fetch';
 import OSS from 'ali-oss';
 import FormData from 'form-data';
@@ -86,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const form = formidable();
-    const [fields, files] = await new Promise((resolve, reject) => {
+    const [fields, files] = await new Promise<[Fields, Files]>((resolve, reject) => {
       form.parse(req, (err, fields, files) => {
         if (err) reject(err);
         resolve([fields, files]);
