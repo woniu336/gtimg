@@ -3,6 +3,7 @@ import formidable, { Fields, Files, File } from 'formidable';
 import fetch from 'node-fetch';
 import OSS from 'ali-oss';
 import FormData from 'form-data';
+import { createReadStream } from 'fs';
 
 // 配置阿里云OSS客户端
 const ossClient = new OSS({
@@ -18,25 +19,24 @@ export const config = {
   },
 };
 
-// 扩展 FormidableFile 接口定义
-interface FormidableFile extends File {
+// 修改 FormidableFile 接口定义
+interface FormidableFile {
   type: string;
   size: number;
   name: string;
-  data: Buffer;
   filepath: string;
   originalFilename: string;
   mimetype: string;
-  hashAlgorithm: boolean | string;
+  hashAlgorithm: false | "sha1" | "md5" | "sha256";
   hash?: string;
+  lastModifiedDate?: Date;
   toJSON(): Object;
 }
 
 async function uploadToGtimg(file: FormidableFile) {
   try {
     const formData = new FormData();
-    // 使用 filepath 而不是 data
-    const fileStream = require('fs').createReadStream(file.filepath);
+    const fileStream = createReadStream(file.filepath);
     formData.append('Filedata', fileStream, {
       filename: file.name,
       contentType: file.type,
@@ -87,8 +87,7 @@ async function uploadToOSS(file: FormidableFile, remoteUrl: string) {
     const extension = file.name.split('.').pop();
     const ossPath = `uploads/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(new Date().getDate()).padStart(2, '0')}/${newFileName}.${extension}`;
 
-    // 使用 filepath 而不是 data
-    const fileStream = require('fs').createReadStream(file.filepath);
+    const fileStream = createReadStream(file.filepath);
     const result = await ossClient.put(ossPath, fileStream);
     return result.url;
   } catch (error) {
@@ -111,10 +110,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     });
 
-    const file = files.Filedata as FormidableFile;
-    if (!file) {
+    const fileData = files.Filedata;
+    if (!fileData || Array.isArray(fileData)) {
       return res.status(400).json({ error: '没有接收到文件' });
     }
+
+    const file = fileData as unknown as FormidableFile;
 
     // 文件类型验证
     const allowedTypes = ['image/jpeg', 'image/png'];
