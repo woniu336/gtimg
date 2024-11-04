@@ -62,7 +62,7 @@ rclone copy /www/wwwroot/1234.com/uploads r2:img/gtimg/uploads \
 
 ## 特别说明
 
-⚠️ **使用限制**：目前不支持上传 webp 格式的图片
+⚠️ **使用限制**：目前不支持上传 avif 格式的图片
 
 
 ## 图片恢复方案
