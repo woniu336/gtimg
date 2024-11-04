@@ -31,11 +31,7 @@ userid=23510990; omaccesstoken=xxx; omtoken=xxx; logintype=4; srcopenid=xxx; src
 
 ### 2. 配置图床
 
-将获取到的 Cookie 填入 `upload.php` 文件中：
-
-```php:upload.php
-private $token = '把上面获取到的Cookie粘贴在这里'
-```
+将获取到的 Cookie 填入 后台管理的Token 配置中
 
 完成配置后，就可以开始使用图床服务了！
 
@@ -45,7 +41,6 @@ private $token = '把上面获取到的Cookie粘贴在这里'
 
 ```bash
 rclone copy /www/wwwroot/1234.com/uploads r2:img/gtimg/uploads \
-    --ignore-existing \
     -u -v -P \
     --transfers=20 \
     --ignore-errors \
