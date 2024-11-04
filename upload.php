@@ -5,7 +5,7 @@ class Gtimg
 {
     public $name = '腾讯Gtimg图床';
     public $ver = '1.0';
-    private $token = 'userid=22510990; omaccesstoken=00c6c7281a6e2af46ed162fd0d19bef8201bd6b97b0e6df07c93577e6b7a97f207b38d5ee1614df8c2a46bd14bc28d311d1775906017ef308b31925c4d8e1ea0c8w6; omtoken=00c6c7281a6e2af46ed162fd0d19bef8201bd6b97b0e6df07c93577e6b7a97f207b38d5ee1614df8c2a46bd14bc28d311d1775906017ef308b31925c4d8e1ea0c8w6; srcaccessToken=86_2s8jTqfCkhUmOdT2vwrp7bpxlHakMWqcUlth8RZ9CH2Df0eAXJXvV2vmvQF21D4r2Z4QXJEKWeNslhBfhN7BOSvl-AQofQDSiP0mC9GyRp8';
+    private $token = '';
 
     public function submit($file_path)
     {
