@@ -15,15 +15,16 @@
             background-color: #f0f4f8;
         }
         .container {
-            background-color: #ffffff;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-color: #f8f8f8;
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
             text-align: center;
             width: 95%;
             max-width: 1200px;
             max-height: 90vh;
             overflow-y: auto;
+            margin-top: -40px;
         }
         h2 {
             color: #2c3e50;
@@ -31,31 +32,41 @@
         }
         #uploadArea {
             border: 2px dashed #3498db;
-            padding: 20px;
-            margin-top: 1rem;
-            border-radius: 4px;
+            padding: 2.5rem;
+            margin: 1rem auto;
+            border-radius: 12px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s ease;
             position: relative;
+            background-color: #ffffff;
+            max-width: 800px;
+            font-size: 1.1rem;
+            color: #666;
         }
         #uploadArea:hover {
-            background-color: #ecf0f1;
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
+            border-color: #2980b9;
         }
         #fileInput {
             display: none;
         }
         #uploadBtn, #copyAllLinksBtn {
-            background-color: #2ecc71;
+            background-color: #3498db;
             color: white;
             border: none;
-            padding: 10px 20px;
-            margin: 1rem 0.5rem 1rem 0.5rem;
-            border-radius: 4px;
+            padding: 12px 28px;
+            margin: 1.5rem 0.5rem;
+            border-radius: 8px;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            font-size: 1rem;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
         }
         #uploadBtn:hover, #copyAllLinksBtn:hover {
-            background-color: #27ae60;
+            background-color: #2980b9;
+            transform: translateY(-1px);
         }
         #uploadBtn:disabled, #copyAllLinksBtn:disabled {
             background-color: #bdc3c7;
@@ -77,17 +88,22 @@
             flex-direction: column;
             align-items: center;
             border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 4px;
-            background-color: #fafafa;
+            padding: 12px;
+            border-radius: 8px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             width: 150px;
             position: relative;
+            transition: transform 0.3s ease;
+        }
+        .result-item:hover {
+            transform: translateY(-2px);
         }
         .result-image {
             width: 150px;
             height: 150px;
             object-fit: cover;
-            border-radius: 4px;
+            border-radius: 6px;
             margin-bottom: 10px;
         }
         .button-group {
@@ -163,31 +179,57 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem;
-            background-color: #fff;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 2rem;
+            padding: 1rem 2rem;
+            background-color: transparent;
+            border-bottom: none;
+            margin-bottom: 1rem;
         }
         
-        .nav-tabs {
+        .nav h2 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        
+        .nav-actions {
             display: flex;
             gap: 1rem;
+            align-items: center;
         }
         
-        .nav-tab {
+        .nav-btn {
             padding: 0.5rem 1rem;
-            cursor: pointer;
             border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-        
-        .nav-tab.active {
-            background-color: #3498db;
+            text-decoration: none;
             color: white;
+            background-color: #3498db;
+            transition: background-color 0.3s ease;
         }
         
-        .nav-tab:hover:not(.active) {
-            background-color: #f0f0f0;
+        .nav-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .logout-btn {
+            background-color: #e74c3c;
+        }
+        
+        .logout-btn:hover {
+            background-color: #c0392b;
+        }
+
+        @media (max-width: 768px) {
+            .nav {
+                padding: 1rem;
+            }
+            
+            .nav-actions {
+                gap: 0.5rem;
+            }
+            
+            .nav-btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.9rem;
+            }
         }
         
         .page {
@@ -234,29 +276,46 @@
         .username {
             font-weight: bold;
         }
+
+        #uploadArea::before {
+            content: '📸';
+            display: block;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-container {
+            max-width: 600px;
+            margin: 1rem auto;
+            height: 8px;
+            background-color: #eef2f7;
+            border-radius: 4px;
+        }
+
+        .progress-bar {
+            border-radius: 4px;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="nav">
-            <div class="nav-tabs">
-                <div class="nav-tab active">上传图片</div>
-                <a href="admin.php" class="nav-tab">管理后台</a>
-            </div>
-            <div class="user-info">
-                <a href="logout.php" class="logout-btn">退出登录</a>
+            <div></div>
+            <div class="nav-actions">
+                <a href="admin.php" class="nav-btn">管理后台</a>
+                <a href="logout.php" class="nav-btn logout-btn">退出登录</a>
             </div>
         </div>
 
         <!-- 上传页面 -->
         <div id="uploadPage" class="page active">
-            <h2>Gtimg图床</h2>
             <div id="uploadArea">
-                点击或拖拽图片到此处上传
+                点击或粘贴图片上传
                 <input type="file" id="fileInput" accept="image/*" multiple>
             </div>
             <button id="uploadBtn">上传图片</button>
-            <button id="copyAllLinksBtn">全部复制链接</button>
+            <button id="copyAllLinksBtn">复制全部链接</button>
             <div class="progress-container">
                 <div class="progress-bar"></div>
             </div>

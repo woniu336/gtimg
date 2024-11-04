@@ -18,7 +18,14 @@ class Gtimg
 {
     public $name = '腾讯Gtimg图床';
     public $ver = '1.0';
-    private $token = '';
+    private $token;
+
+    public function __construct() {
+        $this->token = GTIMG_TOKEN;
+        if (empty($this->token)) {
+            throw new Exception('请先在后台配置Token');
+        }
+    }
 
     public function submit($file_path)
     {

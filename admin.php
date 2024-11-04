@@ -317,6 +317,34 @@ $averageCompressionRatio = $totalSize > 0 ? ($totalSavings / $totalSize * 100) :
                 justify-content: center;
             }
         }
+
+        .token-config {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .token-form {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .token-form textarea {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        #tokenUpdateStatus {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -346,6 +374,15 @@ $averageCompressionRatio = $totalSize > 0 ? ($totalSavings / $totalSize * 100) :
                 <div class="stat-value"><?php echo number_format($averageCompressionRatio, 2); ?>%</div>
                 <div class="stat-label">平均压缩率</div>
             </div>
+        </div>
+        
+        <div class="token-config">
+            <h3>Token 配置</h3>
+            <div class="token-form">
+                <textarea id="tokenInput" rows="3" placeholder="请输入Token..."><?php echo htmlspecialchars(GTIMG_TOKEN); ?></textarea>
+                <button onclick="updateToken()" class="btn btn-primary">保存Token</button>
+            </div>
+            <div id="tokenUpdateStatus"></div>
         </div>
         
         <div class="table-container">
@@ -451,6 +488,45 @@ $averageCompressionRatio = $totalSize > 0 ? ($totalSavings / $totalSize * 100) :
             } catch (error) {
                 console.error('删除失败:', error);
                 alert('删除失败，请稍后重试');
+            }
+        }
+
+        async function updateToken() {
+            const token = document.getElementById('tokenInput').value.trim();
+            const statusDiv = document.getElementById('tokenUpdateStatus');
+            
+            try {
+                const response = await fetch('update_token.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ token })
+                });
+                
+                const data = await response.json();
+                
+                statusDiv.style.display = 'block';
+                if (data.success) {
+                    statusDiv.style.backgroundColor = '#d4edda';
+                    statusDiv.style.color = '#155724';
+                    statusDiv.textContent = 'Token更新成功！';
+                } else {
+                    statusDiv.style.backgroundColor = '#f8d7da';
+                    statusDiv.style.color = '#721c24';
+                    statusDiv.textContent = '更新失败：' + data.message;
+                }
+                
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('更新Token失败:', error);
+                statusDiv.style.backgroundColor = '#f8d7da';
+                statusDiv.style.color = '#721c24';
+                statusDiv.textContent = '更新失败，请重试';
+                statusDiv.style.display = 'block';
             }
         }
     </script>
