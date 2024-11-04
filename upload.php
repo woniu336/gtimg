@@ -1,4 +1,17 @@
 <?php
+session_start();
+require_once 'config.php';
+
+// 检查用户是否已登录
+if (!isLoggedIn()) {
+    http_response_code(403);
+    echo json_encode([
+        'response' => ['code' => '1'],
+        'message' => '请先登录'
+    ]);
+    exit;
+}
+
 header('Content-Type: application/json');
 
 class Gtimg

@@ -159,23 +159,111 @@
             border-radius: 4px;
             display: none;
         }
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background-color: #fff;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 2rem;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .nav-tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-tab.active {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .nav-tab:hover:not(.active) {
+            background-color: #f0f0f0;
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        #historyPage {
+            margin-top: 2rem;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .history-table th,
+        .history-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .history-table th {
+            background-color: #f8f9fa;
+        }
+        
+        .thumbnail {
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: cover;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .username {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Gtimg图床</h2>
-        <div id="uploadArea">
-            点击或拖拽图片到此处上传
-            <input type="file" id="fileInput" accept="image/*" multiple>
+        <div class="nav">
+            <div class="nav-tabs">
+                <div class="nav-tab active">上传图片</div>
+                <a href="admin.php" class="nav-tab">管理后台</a>
+            </div>
+            <div class="user-info">
+                <a href="logout.php" class="logout-btn">退出登录</a>
+            </div>
         </div>
-        <button id="uploadBtn">上传图片</button>
-        <button id="copyAllLinksBtn">全部复制链接</button>
-        <div class="progress-container">
-            <div class="progress-bar"></div>
+
+        <!-- 上传页面 -->
+        <div id="uploadPage" class="page active">
+            <h2>Gtimg图床</h2>
+            <div id="uploadArea">
+                点击或拖拽图片到此处上传
+                <input type="file" id="fileInput" accept="image/*" multiple>
+            </div>
+            <button id="uploadBtn">上传图片</button>
+            <button id="copyAllLinksBtn">全部复制链接</button>
+            <div class="progress-container">
+                <div class="progress-bar"></div>
+            </div>
+            <div class="progress-text"></div>
+            <div id="uploadStatus"></div>
+            <div id="resultContainer"></div>
         </div>
-        <div class="progress-text"></div>
-        <div id="uploadStatus"></div>
-        <div id="resultContainer"></div>
     </div>
 
     <script>
@@ -486,6 +574,97 @@
                 return filename || '未知文件名';
             } catch (error) {
                 return '未知文件名';
+            }
+        }
+
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('check_login.php');
+                const data = await response.json();
+                if (!data.logged_in) {
+                    window.location.href = 'login.php';
+                }
+            } catch (error) {
+                console.error('检查登录状态失败:', error);
+                window.location.href = 'login.php';
+            }
+        }
+
+        checkLoginStatus();
+
+        const navTabs = document.querySelectorAll('.nav-tab');
+        const pages = document.querySelectorAll('.page');
+        
+        navTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetPage = tab.dataset.page;
+                
+                // 更新标签状态
+                navTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // 更新页面显示
+                pages.forEach(page => {
+                    page.classList.remove('active');
+                    if (page.id === targetPage) {
+                        page.classList.add('active');
+                    }
+                });
+                
+                // 如果切换到历史记录页面，加载历史数据
+                if (targetPage === 'historyPage') {
+                    loadHistory();
+                }
+            });
+        });
+        
+        // 加载历史记录
+        async function loadHistory() {
+            try {
+                const response = await fetch('get_history.php');
+                const data = await response.json();
+                
+                const tbody = document.getElementById('historyTableBody');
+                tbody.innerHTML = '';
+                
+                data.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><img src="${item.remote_url}" alt="预览" class="thumbnail"></td>
+                        <td>${item.local_path.split('/').pop()}</td>
+                        <td>${item.upload_time}</td>
+                        <td>${formatSize(item.file_size)}</td>
+                        <td>${item.compression_info ? formatSize(item.compression_info.compressed_size) : '-'}</td>
+                        <td>${item.compression_info ? item.compression_info.compression_ratio.toFixed(2) + '%' : '-'}</td>
+                        <td>
+                            <button onclick="copyToClipboard('${item.remote_url}')">复制链接</button>
+                            <button onclick="copyToClipboard('![Image](${item.remote_url})')">复制Markdown</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('加载历史记录失败:', error);
+            }
+        }
+        
+        // 格式化文件大小
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+        }
+        
+        // 复制到剪贴板
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                alert('已复制到剪贴板');
+            } catch (error) {
+                console.error('复制失败:', error);
+                alert('复制失败，请手动复制');
             }
         }
     </script>
