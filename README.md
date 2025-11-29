@@ -40,19 +40,20 @@ userid=23510990; omaccesstoken=xxx; omtoken=xxx; logintype=4; srcopenid=xxx; src
 为了确保数据安全，我推荐使用 rclone 配合 Cloudflare R2 进行自动备份。以下是经过优化的备份命令：
 
 ```bash
-rclone copy /www/wwwroot/1234.com/uploads r2:img/gtimg/uploads \
+rclone copy /www/wwwroot/123.com/uploads r2:img \
     -u -v -P \
-    --transfers=20 \
+    --transfers=8 \
+    --checkers=16 \
+    --buffer-size=8M \
+    --fast-list \
     --ignore-errors \
-    --buffer-size=64M \
-    --check-first \
-    --checkers=15 \
-    --drive-acknowledge-abuse
+    --check-first
+
 ```
 
 参数说明：
-- `/www/wwwroot/1234.com/uploads`：本地图片目录
-- `r2:img/gtimg/uploads`：R2 存储路径（其中 `img` 为你的 R2 存储桶名称）
+- `/www/wwwroot/123.com/uploads`：本地图片目录
+- `r2:img`：R2 存储路径（其中 `img` 为你的 R2 存储桶名称）
 - 其他参数已优化为最佳性能配置
 
 ## 特别说明
@@ -66,7 +67,7 @@ rclone copy /www/wwwroot/1234.com/uploads r2:img/gtimg/uploads \
 
 1. 使用备份中的图片文件
 2. 批量替换链接前缀 `https://inews.gtimg.com/om_ls`
-3. 把/0替换成.webp
+3. 把`/0`替换成`.webp`
 
 这样的设计确保了即使服务中断，你的图片资源也不会丢失。
 
