@@ -147,7 +147,7 @@ function convertToWebp($imagePath) {
         // 获取图片类型
         $mime = $imageInfo['mime'];
         
-        // 如果已经是webp格式，直接返回
+        // 如果已经是webp格式,直接返回
         if ($mime === 'image/webp') {
             $originalSize = filesize($imagePath);
             return [
@@ -222,7 +222,7 @@ function convertToWebp($imagePath) {
             $quality = 90;
         }
 
-        // 对于小图片，提高质量
+        // 对于小图片,提高质量
         if ($originalSize < 100 * 1024) { // 小于100KB
             $quality = 92;
         }
@@ -233,7 +233,7 @@ function convertToWebp($imagePath) {
             return false;
         }
 
-        // 检查转换后的大小，如果比原图大，尝试调整质量
+        // 检查转换后的大小,如果比原图大,尝试调整质量
         $newSize = filesize($webpPath);
         if ($newSize > $originalSize) {
             // 逐步降低质量直到文件大小小于原图或达到最低质量
@@ -254,7 +254,7 @@ function convertToWebp($imagePath) {
         if (file_exists($webpPath) && filesize($webpPath) > 0) {
             $compressedSize = filesize($webpPath);
             
-            // 无论大小如何，都删除原文件（非webp格式）
+            // 无论大小如何,都删除原文件(非webp格式)
             if ($mime !== 'image/webp') {
                 unlink($imagePath);
             }
@@ -327,7 +327,7 @@ function processImageAsync($localPath, $historyFile) {
                 
                 file_put_contents($historyFile, json_encode($history, JSON_PRETTY_PRINT));
                 
-                error_log("历史记录已更新，压缩率: " . $compressionRatio . "%");
+                error_log("历史记录已更新,压缩率: " . $compressionRatio . "%");
             }
         }
     } catch (Exception $e) {
@@ -343,7 +343,7 @@ try {
     $file = $_FILES['Filedata'];
     
     if ($file['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception('文件上传失败，错误代码：' . $file['error']);
+        throw new Exception('文件上传失败,错误代码:' . $file['error']);
     }
 
     $max_size = 10 * 1024 * 1024; // 10MB
@@ -353,7 +353,8 @@ try {
 
     $tempPath = $file['tmp_name'];
     
-    $uploadDir = 'uploads/' . date('Y/m/d/');
+    // 直接使用uploads目录,不创建日期子目录
+    $uploadDir = 'uploads/';
     if (!is_dir($uploadDir)) {
         if (!mkdir($uploadDir, 0777, true)) {
             throw new Exception('创建上传目录失败');
